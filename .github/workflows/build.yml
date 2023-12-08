@@ -1,0 +1,53 @@
+name: Build
+
+on: push
+
+env:
+  BORGMATIC_REPO: ghcr.io/borgmatic-collective/borgmatic
+  BORGMATIC_REF: 1.8.5
+
+jobs:
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/borgmatic
+          tags: |
+            type=raw,priority=1000,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}},value=${{ env.BORGMATIC_REF }},enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.BORGMATIC_REF }},enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{major}},value=${{ env.BORGMATIC_REF }},enable=${{ github.ref == 'refs/heads/main' }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          pull: true
+          push: ${{ github.secret_source == 'Actions' && steps.meta.outputs.tags != '' }}
+          platforms: linux/amd64,linux/arm64/v8
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BORGMATIC_REPO=${{ env.BORGMATIC_REPO }}
+            BORGMATIC_REF=${{ env.BORGMATIC_REF }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
