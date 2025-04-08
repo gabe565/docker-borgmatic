@@ -1,4 +1,4 @@
-FROM ghcr.io/borgmatic-collective/borgmatic:1.9.14
+FROM ghcr.io/borgmatic-collective/borgmatic:2.0.1
 
 RUN set -x \
   && apk del --no-cache postgresql-client \
