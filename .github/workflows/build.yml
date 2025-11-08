@@ -4,7 +4,7 @@ on: push
 
 env:
   BORGMATIC_REPO: ghcr.io/borgmatic-collective/borgmatic
-  BORGMATIC_REF: 2.0.9
+  BORGMATIC_REF: 2.0.11
 
 jobs:
   build:
